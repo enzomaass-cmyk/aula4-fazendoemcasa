@@ -1,30 +1,23 @@
-require('dotenv').config({ path: './.env' });
+const { Client } = require('pg');
+require('dotenv').config();
 
-const { Pool } = require('pg');
-
-console.log('ENV:', {
-  DB_HOST: process.env.DB_HOST,
-  DB_PORT: process.env.DB_PORT,
-  DB_USER: process.env.DB_USER,
-  DB_PASSWORD: process.env.DB_PASSWORD,
-  DB_NAME: process.env.DB_NAME,
-});
-
-const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: 5432,
+const client = new Client({
   user: process.env.DB_USER,
-  password: String(process.env.DB_PASSWORD),
-  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  database: process.env.DB_NAME
 });
 
-async function testarConexao() {
+async function conectar() {
   try {
-    const res = await pool.query('SELECT NOW()');
-    console.log('Conectado com sucesso!', res.rows[0]);
-  } catch (err) {
-    console.error('Erro ao conectar:', err);
+    await client.connect();
+    console.log('✅ Conectado ao PostgreSQL com sucesso!');
+  } catch (erro) {
+    console.error('❌ Erro ao conectar:', erro.message);
+  } finally {
+    await client.end();
   }
 }
 
-testarConexao();
+conectar();
