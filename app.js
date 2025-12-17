@@ -9,15 +9,21 @@ const client = new Client({
   database: process.env.DB_NAME
 });
 
-async function conectar() {
+async function listarClientes() {
   try {
     await client.connect();
-    console.log('✅ Conectado ao PostgreSQL com sucesso!');
+
+    const resultado = await client.query('SELECT * FROM clientes');
+
+    console.log('📋 Clientes cadastrados:');
+    console.log(resultado.rows);
+
   } catch (erro) {
-    console.error('❌ Erro ao conectar:', erro.message);
-  } finally {
+  console.error('❌ Erro completo:', erro);
+}
+   finally {
     await client.end();
   }
 }
 
-conectar();
+listarClientes();
