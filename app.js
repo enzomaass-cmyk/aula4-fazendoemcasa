@@ -9,21 +9,30 @@ const client = new Client({
   database: process.env.DB_NAME
 });
 
-async function listarClientes() {
+async function adicionarCliente(nome, email, telefone) {
   try {
     await client.connect();
-
-    const resultado = await client.query('SELECT * FROM clientes');
-
-    console.log('📋 Clientes cadastrados:');
-    console.log(resultado.rows);
-
+    
+    // Validar dados
+    if (!nome || !email) {
+      throw new Error('Nome e email são obrigatórios');
+    }
+    
+    // Inserir
+    const resultado = await client.query(
+      'INSERT INTO clientes (nome, email, telefone) VALUES ($1, $2, $3) RETURNING *',
+      [nome, email, telefone]
+    );
+    
+    console.log('✅ Cliente adicionado com sucesso!');
+    console.log('Dados:', resultado.rows[0]);
+    
   } catch (erro) {
-  console.error('❌ Erro completo:', erro);
-}
-   finally {
+    console.error('❌ Erro:', erro.message);
+  } finally {
     await client.end();
   }
 }
 
-listarClientes();
+// Usar
+adicionarCliente('Enzo Maass', 'enzo@email.com', '11999999999');
