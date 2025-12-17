@@ -1,3 +1,4 @@
+
 const { Client } = require('pg');
 require('dotenv').config();
 
@@ -9,28 +10,53 @@ const client = new Client({
   database: process.env.DB_NAME
 });
 
-async function adicionarVariosClientes() {
+// Função de validação
+function validarCliente(nome, email, telefone) {
+  const erros = [];
+  
+  // Validar nome
+  if (!nome || nome.trim() === '') {
+    erros.push('Nome é obrigatório');
+  } else if (nome.length < 3) {
+    erros.push('Nome deve ter pelo menos 3 caracteres');
+  }
+  
+  // Validar email
+  if (!email || email.trim() === '') {
+    erros.push('Email é obrigatório');
+  } else if (!email.includes('@')) {
+    erros.push('Email inválido');
+  }
+  
+  // Validar telefone
+  if (telefone && telefone.length < 10) {
+    erros.push('Telefone inválido');
+  }
+  
+  return erros;
+}
+
+async function adicionarClienteComValidacao(nome, email, telefone) {
   try {
-    await client.connect();
+    // Validar
+    const erros = validarCliente(nome, email, telefone);
     
-    const clientes = [
-      ['Déric Martins', 'martins@email.com', '11988888888'],
-      ['Pedro Oliveira', 'pedro@email.com', '11977777777'],
-      ['Ana Costa', 'ana@email.com', '21966666666'],
-      ['Carlos Mendes', 'carlos@email.com', '31955555555']
-    ];
-    
-    let contador = 0;
-    
-    for (const [nome, email, telefone] of clientes) {
-      await client.query(
-        'INSERT INTO clientes (nome, email, telefone) VALUES ($1, $2, $3)',
-        [nome, email, telefone]
-      );
-      contador++;
+    if (erros.length > 0) {
+      console.error('❌ Erros de validação:');
+      erros.forEach(erro => console.error(`  - ${erro}`));
+      return;
     }
     
-    console.log(`✅ ${contador} clientes adicionados com sucesso!`);
+    // Conectar e inserir
+    await client.connect();
+    
+    const resultado = await client.query(
+      'INSERT INTO clientes (nome, email, telefone) VALUES ($1, $2, $3) RETURNING *',
+      [nome, email, telefone]
+    );
+    
+    console.log('✅ Cliente adicionado com sucesso!');
+    console.log('Dados:', resultado.rows[0]);
     
   } catch (erro) {
     console.error('❌ Erro:', erro.message);
@@ -39,4 +65,28 @@ async function adicionarVariosClientes() {
   }
 }
 
-adicionarVariosClientes();
+// Testes
+async function executarTestes() {
+  console.log('--- Teste 1: Dados válidos ---');
+  await adicionarClienteComValidacao(
+    'Déric Martins',
+    'deric_validacao@email.com',
+    '85944444444'
+  );
+
+  console.log('\n--- Teste 2: Nome vazio ---');
+  await adicionarClienteComValidacao(
+    '',
+    'teste@email.com',
+    '11999999999'
+  );
+
+  console.log('\n--- Teste 3: Email inválido ---');
+  await adicionarClienteComValidacao(
+    'Roberto Alves',
+    'email-invalido',
+    '47933333333'
+  );
+}
+
+executarTestes();
