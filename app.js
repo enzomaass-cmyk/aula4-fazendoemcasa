@@ -9,35 +9,67 @@ const client = new Client({
   database: process.env.DB_NAME
 });
 
-async function adicionarProdutos() {
+async function exibirClientes() {
+  const resultado = await client.query(
+    'SELECT id, nome, email, telefone FROM clientes ORDER BY nome'
+  );
+
+  console.log('\n📋 CLIENTES CADASTRADOS');
+  console.log('='.repeat(80));
+
+  if (resultado.rows.length === 0) {
+    console.log('Nenhum cliente cadastrado');
+  } else {
+    resultado.rows.forEach(cliente => {
+      console.log(`ID: ${cliente.id}`);
+      console.log(`Nome: ${cliente.nome}`);
+      console.log(`Email: ${cliente.email}`);
+      console.log(`Telefone: ${cliente.telefone || 'Não informado'}`);
+      console.log('-'.repeat(80));
+    });
+  }
+}
+
+async function exibirProdutos() {
+  const resultado = await client.query(
+    'SELECT id, nome, preco, estoque FROM produtos ORDER BY nome'
+  );
+
+  console.log('\n📦 PRODUTOS CADASTRADOS');
+  console.log('='.repeat(80));
+
+  if (resultado.rows.length === 0) {
+    console.log('Nenhum produto cadastrado');
+  } else {
+    let totalValor = 0;
+
+    resultado.rows.forEach(produto => {
+      const preco = Number(produto.preco); // ✅ conversão correta
+      const valor = preco * produto.estoque;
+      totalValor += valor;
+
+      console.log(`ID: ${produto.id}`);
+      console.log(`Nome: ${produto.nome}`);
+      console.log(`Preço: R$ ${preco.toFixed(2)}`);
+      console.log(`Estoque: ${produto.estoque} unidades`);
+      console.log(`Valor em estoque: R$ ${valor.toFixed(2)}`);
+      console.log('-'.repeat(80));
+    });
+
+    console.log(`\nValor total em estoque: R$ ${totalValor.toFixed(2)}`);
+  }
+}
+
+
+// Executar tudo
+(async () => {
   try {
     await client.connect();
-    
-    const produtos = [
-      ['Notebook Dell', 3500.00, 5],
-      ['Mouse Logitech', 80.00, 25],
-      ['Teclado Mecânico', 350.00, 10],
-      ['Monitor LG 24"', 800.00, 8],
-      ['Webcam Full HD', 250.00, 15]
-    ];
-    
-    let contador = 0;
-    
-    for (const [nome, preco, estoque] of produtos) {
-      await client.query(
-        'INSERT INTO produtos (nome, preco, estoque) VALUES ($1, $2, $3)',
-        [nome, preco, estoque]
-      );
-      contador++;
-    }
-    
-    console.log(`✅ ${contador} produtos adicionados com sucesso!`);
-    
+    await exibirClientes();
+    await exibirProdutos();
   } catch (erro) {
     console.error('❌ Erro:', erro.message);
   } finally {
     await client.end();
   }
-}
-
-adicionarProdutos();
+})();
